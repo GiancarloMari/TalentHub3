@@ -1,43 +1,52 @@
 <template>
-  <q-page>
-    <q-card class="q-mt-lg">
-      <q-card-section>
-        <div class="text-h5">Moje narudžbe</div>
-      </q-card-section>
+  <q-page class="q-pa-md">
+    <div class="text-h5 text-center q-mb-md text-primary">Moje narudžbe</div>
 
-      <q-card-section>
-        <q-list>
-          <q-item v-for="narudzba in narudzbe" :key="narudzba.id">
-            <q-item-section>
-              <q-item-label>
-                Freelancer: {{ narudzba.freelancer }}
-              </q-item-label>
-              <q-item-label caption>
-                Opis posla: {{ narudzba.opis_posla }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card-section>
-
-      <q-card-section>
-        <q-btn label="Dodaj narudžbu" color="primary" @click="otvoriFormu = true" />
-        <q-dialog v-model="otvoriFormu">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">Nova narudžba</div>
-            </q-card-section>
-            <q-card-section>
-              <q-form @submit.prevent="dodajNarudzbu">
-                <q-select v-model="novaNarudzba.freelancer_id" :options="freelanceri" label="Odaberi freelancera" />
-                <q-input v-model="novaNarudzba.opis_posla" label="Opis posla" type="textarea" />
-                <q-btn label="Dodaj" color="primary" type="submit" />
-              </q-form>
-            </q-card-section>
-          </q-card>
-        </q-dialog>
+    <q-card class="q-mb-md q-pa-md shadow-2">
+      <q-card-section class="text-center">
+        <p class="text-grey-8">Pregledajte i upravljajte svojim narudžbama ili dodajte novu.</p>
+        <q-btn color="primary" label="Dodaj narudžbu" icon="add" @click="otvoriFormu = true" />
       </q-card-section>
     </q-card>
+
+    <div v-if="narudzbe.length > 0">
+      <q-list class="q-gutter-md">
+        <q-card v-for="narudzba in narudzbe" :key="narudzba.id" class="shadow-2 q-pa-md hover-card">
+          <q-card-section horizontal>
+            <q-avatar color="primary" text-color="white" icon="assignment" />
+            <q-card-section>
+              <q-item-label class="text-bold text-primary">{{ narudzba.opis_posla }}</q-item-label>
+              <q-item-label caption>Freelancer: <span class="text-dark">{{ narudzba.freelancer }}</span></q-item-label>
+            </q-card-section>
+          </q-card-section>
+        </q-card>
+      </q-list>
+    </div>
+
+    <q-card v-else class="q-pa-md text-center shadow-2">
+      <q-card-section>
+        <q-icon name="info" size="lg" color="grey" />
+        <div class="text-h6">Nemate aktivnih narudžbi</div>
+        <p class="text-grey-8">Pregledajte dostupne freelancere i napravite narudžbu.</p>
+        <q-btn color="primary" label="Pronađi freelancera" to="/freelanceri" />
+      </q-card-section>
+    </q-card>
+
+    <!-- MODAL ZA DODAVANJE NARUDŽBE -->
+    <q-dialog v-model="otvoriFormu">
+      <q-card class="q-pa-md" style="max-width: 400px; width: 100%;">
+        <q-card-section>
+          <div class="text-h6 text-primary">Nova narudžba</div>
+        </q-card-section>
+        <q-card-section>
+          <q-form @submit.prevent="dodajNarudzbu">
+            <q-select v-model="novaNarudzba.freelancer_id" :options="freelanceri" label="Odaberi freelancera" filled class="q-mb-md" />
+            <q-input v-model="novaNarudzba.opis_posla" label="Opis posla" type="textarea" filled class="q-mb-md" />
+            <q-btn color="primary" label="Dodaj" type="submit" class="full-width q-mt-md" />
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -52,7 +61,7 @@ export default {
       freelanceri: [],
       novaNarudzba: {
         freelancer_id: null,
-        opis_posla: '' // Promjena: opis -> opis_posla
+        opis_posla: ''
       },
       otvoriFormu: false
     };
@@ -78,56 +87,71 @@ export default {
       });
   },
   methods: {
-  dodajNarudzbu() {
-    const korisnik = JSON.parse(localStorage.getItem('user'));
-    if (!korisnik) {
-      Notify.create({
-        type: 'negative',
-        message: 'Niste prijavljeni! Prijavite se kako biste poslali narudžbu.',
-        position: 'top-right',
-        timeout: 2000
-      });
-      return;
-    }
-
-    const podaciZaSlanje = {
-      freelancer_id: this.novaNarudzba.freelancer_id.value,
-      opis_posla: this.novaNarudzba.opis_posla,
-      korisnik_id: korisnik.id // Dodaj korisnik_id
-    };
-
-    console.log('Podaci za slanje narudžbe:', podaciZaSlanje);
-
-    axios.post('http://localhost:3000/narudzbe', podaciZaSlanje)
-      .then(response => {
-        if (response.data.success) {
-          Notify.create({
-            type: 'positive',
-            message: 'Narudžba je uspješno dodana!',
-            position: 'top-right',
-            timeout: 2000
-          });
-
-          this.$router.go(); // Osvježi stranicu
-        } else {
-          Notify.create({
-            type: 'negative',
-            message: 'Greška pri dodavanju narudžbe!',
-            position: 'top-right',
-            timeout: 2000
-          });
-        }
-      })
-      .catch(err => {
-        console.error('Greška pri dodavanju narudžbe:', err);
+    dodajNarudzbu() {
+      const korisnik = JSON.parse(localStorage.getItem('user'));
+      if (!korisnik) {
         Notify.create({
           type: 'negative',
-          message: 'Greška na serveru!',
+          message: 'Niste prijavljeni! Prijavite se kako biste poslali narudžbu.',
           position: 'top-right',
           timeout: 2000
+        });
+        return;
+      }
+
+      const podaciZaSlanje = {
+        freelancer_id: this.novaNarudzba.freelancer_id.value,
+        opis_posla: this.novaNarudzba.opis_posla,
+        korisnik_id: korisnik.id
+      };
+
+      axios.post('http://localhost:3000/narudzbe', podaciZaSlanje)
+        .then(response => {
+          if (response.data.success) {
+            Notify.create({
+              type: 'positive',
+              message: 'Narudžba je uspješno dodana!',
+              position: 'top-right',
+              timeout: 2000
+            });
+            this.$router.go();
+          } else {
+            Notify.create({
+              type: 'negative',
+              message: 'Greška pri dodavanju narudžbe!',
+              position: 'top-right',
+              timeout: 2000
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Greška pri dodavanju narudžbe:', err);
+          Notify.create({
+            type: 'negative',
+            message: 'Greška na serveru!',
+            position: 'top-right',
+            timeout: 2000
           });
         });
     }
   }
 };
 </script>
+
+<style scoped>
+/* Poboljšan izgled kartica */
+.q-card {
+  border-radius: 10px;
+  transition: transform 0.2s;
+}
+
+.q-card:hover {
+  transform: scale(1.02);
+}
+
+/* Hover efekt na karticama narudžbi */
+.hover-card:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease;
+}
+</style>

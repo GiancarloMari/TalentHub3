@@ -188,4 +188,26 @@ app.get('/kategorije', (req, res) => {
       res.json({ success: true, id: result.insertId, naziv });
     });
   });
+
+  app.get('/freelanceri', (req, res) => {
+    const kategorijaId = req.query.kategorija; // Dohvati ID kategorije iz URL parametra
+  
+    let query = `
+      SELECT freelanceri.*, kategorije.id as kategorija_id
+      FROM freelanceri
+      JOIN kategorije ON freelanceri.usluga = kategorije.naziv
+    `;
+  
+    if (kategorijaId) {
+      query += ` WHERE kategorije.id = ${db.escape(kategorijaId)}`;
+    }
+  
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Greška pri dohvaćanju freelancera:', err.message);
+        return res.status(500).json({ error: 'Greška na serveru' });
+      }
+      res.json(results);
+    });
+  });
   
